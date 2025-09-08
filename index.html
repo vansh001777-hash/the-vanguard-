@@ -1,413 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The Vanguard — 60 Day Planner</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>60-Day Planner</title>
 <style>
-  :root{--bg:#0b0b0c;--card:#0f1113;--accent:#ffd000;--muted:#bfc6c9;--accent2:#00e6c3}
-  body{margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:linear-gradient(180deg,#050506 0%,#0b0b0c 100%);color:#e6eef1}
-  .container{max-width:980px;margin:20px auto;padding:18px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  h1{margin:0;font-size:24px;letter-spacing:0.6px;color:var(--accent)}
-  p.lead{margin:6px 0 0;color:var(--muted)}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
-  textarea,input,select,button{font-size:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#071018;color:#eaf2f3}
-  select{min-width:150px}
-  button.primary{background:var(--accent);color:#000;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
-  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-  .card{background:var(--card);padding:14px;border-radius:12px;margin-top:14px;box-shadow:0 6px 22px rgba(0,0,0,0.6)}
-  .plan-title{display:flex;justify-content:space-between;align-items:center;gap:12px}
-  .plan-list{margin:12px 0;padding-left:18px}
-  .plan-list li{margin:8px 0;line-height:1.4}
-  footer{margin-top:18px;text-align:center;color:var(--accent);font-weight:600}
-  .progress{width:100%;height:18px;background:rgba(255,255,255,0.04);border-radius:10px;overflow:hidden}
-  .progress .bar{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));width:0%}
-  .task{display:flex;align-items:center;gap:8px;margin:8px 0}
-  .muted{color:var(--muted);font-size:13px}
-  @media(max-width:600px){h1{font-size:20px}.controls{flex-direction:column;align-items:stretch}}
+  body {
+    background: #0b0b0c;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #ffd000;
+    margin-bottom: 20px;
+  }
+  .progress-container {
+    width: 100%;
+    background: #222;
+    border-radius: 20px;
+    margin: 20px auto;
+    height: 20px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: #ffd000;
+    width: 0%;
+    transition: width 0.3s;
+  }
+  details {
+    margin: 15px 0;
+    background: #111;
+    border-radius: 12px;
+    padding: 10px 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+  summary {
+    font-size: 1.2em;
+    color: #ffd000;
+    cursor: pointer;
+    outline: none;
+  }
+  .day-card {
+    background: #1a1a1d;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+  }
+  .day-card h3 {
+    margin: 0 0 8px 0;
+    color: #ffd000;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  li {
+    margin: 6px 0;
+  }
+  input[type="checkbox"] {
+    margin-right: 10px;
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <div>
-      <h1>The Vanguard — 60 Day Practical Plan</h1>
-      <p class="lead">Elite discipline. Real workouts. Real growth. Day 1 starts today — Day 0 was the intro.</p>
-    </div>
-    <div class="muted">Powered by Vansh</div>
-  </header>
 
-  <div class="controls card">
-    <div style="flex:1">
-      <label class="muted">Select Day</label><br>
-      <select id="pastDaySelect"></select>
-    </div>
-    <div style="min-width:180px">
-      <label class="muted">Quick note (optional)</label><br>
-      <input id="quickNote" placeholder="Today's top focus (optional)" />
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px;justify-content:center">
-      <button class="primary" id="getPlanBtn">Get Plan</button>
-      <button class="ghost" id="copyBtn">Copy Plan</button>
-    </div>
-  </div>
+<h1>Vanguard — 60 Day Planner</h1>
 
-  <div id="planOutput" class="card" style="min-height:140px">
-    <!-- Plan rendered here -->
-  </div>
-
-  <div style="margin-top:12px" class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div><strong>Progress</strong> <span id="progressText" class="muted">0/0</span></div>
-      <div style="width:60%;max-width:560px">
-        <div class="progress"><div class="bar" id="progressBar"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <footer>Keep the ritual — morning affirmation, daily action, weekly review.</footer>
+<div class="progress-container">
+  <div class="progress-bar" id="progress-bar"></div>
 </div>
+<p id="progress-text" style="text-align:center;"></p>
+
+<div id="plan-container"></div>
 
 <script>
-/* ================== CONFIG ================== */
-/* Day mapping: user requested yesterday = intro (day 0). Today is day 1. */
-const today = new Date();
-const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // start = today -> day 1
-const maxDays = 60; // 60-day program
-/* ================== DATA (60 mini challenges + surprise notes + skills) ================== */
+const maxDays = 60;
+const daysPerWeek = 7;
+const container = document.getElementById("plan-container");
+const progressBar = document.getElementById("progress-bar");
+const progressText = document.getElementById("progress-text");
 
-const miniChallenges = [
-  "Do 20 burpees", "Skip social media for 2 hrs", "Write 3 gratitude points",
-  "Drink 3L water", "Cold shower (1 min)", "Meditate 5 min", "Stretch 10 min",
-  "Organize study table", "Write 5 new English words", "2 min plank (split sets)",
-  "Run in place 5 min", "Skip one junk meal", "Read 3 pages of a book",
-  "Record 1 min English audio", "Complete tasks before 10 PM", "Push-up AM & PM (total 50)",
-  "Walk +2000 steps extra", "Wall sit 1 min", "Call a friend in English for 3 min",
-  "Write your top 3 goals on paper", "No sugar today", "Try 10 min yoga",
-  "Do 30 squats (split sets)", "Practice deep breathing 5 min", "Drink green tea",
-  "Limit non-essential screen time to 2 hrs", "Review weekly progress", "Make a to-do list",
-  "Avoid gossip today", "Wake up 30 min earlier", "15 jump squats",
-  "Learn 1 Excel shortcut", "50 push-ups (split)", "15 min walk after dinner",
-  "Learn 3 financial terms", "Read aloud 1 page", "Sleep 30 min earlier than usual",
-  "Try skipping rope 5 min", "Cook a healthy meal", "Watch short finance explainer",
-  "Clean/declutter one shelf", "Side planks 30s each", "Practice tongue twisters 3x",
-  "Write a 5-line journal", "Spend 30 min on a Python mini-task", "Do 40 squats",
-  "Gratitude meditation 5 min", "Say NO to procrastination today", "20 mountain climbers",
-  "Delete 10 useless files/photos", "Learn one AI prompt trick", "Do 10 burpees + 10 push-ups",
-  "Compliment someone in English", "No excuses: finish 1 pending task", "Re-read goals for 2 min"
-];
-
-const surpriseNotes = [
-  "Discipline > Motivation", "Small steps daily = Big results", "Sleep well = Perform well",
-  "Read more, scroll less", "Consistency compounds", "Focus on process, not outcome",
-  "Finance literacy = Freedom", "Language is influence", "Coding = modern literacy",
-  "Move before you compute", "Winners learn daily", "Celebrate tiny wins",
-  "Build systems, not goals", "Your network matters", "Limit inputs to protect focus",
-  "Hydration fuels performance", "One page a day → many books", "Record yourself to improve",
-  "Track progress, not perfection", "Invest in knowledge", "A calm mind solves problems",
-  "Small investments grow via discipline", "Weekly review beats chaos", "Fail fast, learn faster",
-  "Write to remember"
-];
-
-const skillRoadmap = {
-  1: "Python Basics: print, variables, types",
-  2: "If-Else & Loops",
-  3: "Functions & small exercises",
-  4: "Lists & Tuples",
-  5: "Dictionaries & Sets",
-  6: "File handling basics",
-  7: "Error handling & debugging",
-  8: "Intro to OOP (classes)",
-  9: "Mini Project: Calculator (start)",
-  10: "Mini Project: Calculator (finish)",
-  // 11-20: solidify basics + small projects
-  11: "Mini Project: Quiz App (plan)",
-  12: "Mini Project: Quiz App (build)",
-  13: "Mini Project: To-Do (plan)",
-  14: "Mini Project: To-Do (build)",
-  15: "Mini Project: File Organizer",
-  16: "Mini Project: Unit Converter",
-  17: "Mini Project: To finish any pending project",
-  18: "Intro to Excel: cells, ranges, basic formulas",
-  19: "Excel: SUM, AVERAGE, IF",
-  20: "Excel: Charts & shortcuts",
-  // 21-40: apply + AI tools basics
-  21: "Intro to AI tools (ChatGPT): prompt basics",
-  22: "Use AI to debug small code",
-  23: "Use AI to automate simple Excel tasks",
-  24: "Learn one useful library: requests or pandas intro",
-  25: "Pandas: basic data frames (read CSV)",
-  26: "Pandas: filter, group, summarize",
-  27: "Build a small data task (CSV read & summary)",
-  28: "APIs: call a simple API",
-  29: "Web basics: HTML/CSS intro",
-  30: "Web basics: simple JS snippet",
-  31: "Mini project: combine Python + CSV",
-  32: "Refactor code: make functions cleaner",
-  33: "Learn Git basics (init, commit)",
-  34: "Publish a small project (Zip or GitHub)",
-  35: "Learn simple automation: schedule a script",
-  36: "Study: basic algorithms (search/sort overview)",
-  37: "Practice 3 coding exercises (easy)",
-  38: "Improve one past project",
-  39: "Create a short demo video (1 min) of your project",
-  40: "Plan a 2-week post-course project"
-  // 41-60: repeat & consolidate, but we'll map days to these where needed
-};
-
-/* ================ HELPERS: day math & UI ================ */
-function daysSinceStart() {
-  // day 1 = today
-  const now = new Date();
-  const diff = Math.floor((now - startDate) / (1000*60*60*24));
-  return diff + 1; // today -> 1
-}
-const currentDayNumber = daysSinceStart(); // the maximum unlocked day
-/* Populate dropdown (0 = intro) */
-const select = document.getElementById('pastDaySelect');
-(function populate() {
-  select.innerHTML = '';
-  // Intro option as Day 0
-  const opt0 = document.createElement('option');
-  opt0.value = 0;
-  opt0.text = 'Intro (Day 0)';
-  opt0.disabled = false;
-  select.appendChild(opt0);
-  // Days 1..maxDays
-  for(let i=1;i<=maxDays;i++){
-    const o = document.createElement('option');
-    o.value = i;
-    o.text = `Day ${i}`;
-    // disable future days beyond currentDayNumber
-    if(i > currentDayNumber) o.disabled = true;
-    select.appendChild(o);
-  }
-  // default: today's day
-  select.value = currentDayNumber <= maxDays ? currentDayNumber : maxDays;
-})();
-
-/* ============== RULES: Finance, Speaking, Manifestation ============== */
-function getFinanceTask(day){
-  if(day === 0) return "Intro: Learn basic rule — record one expense daily. Weekly review and invest on day 30 & 60.";
-  if(day % 30 === 0) return "Milestone: Invest ₹100-200 in SIP/Gold/FD (if possible) + review portfolio.";
-  if(day % 7 === 0) return "Weekly Finance: Read one short explainer on SIP/mutual funds/stocks and note 1 idea.";
-  return "Daily Finance: Record 1 expense & note one money lesson (even 1 line).";
+// Load saved checkbox states
+function loadState() {
+  return JSON.parse(localStorage.getItem("plannerState") || "{}");
 }
 
-function getSpeakingTask(day){
-  if(day === 0) return "Intro: Commit to daily speaking practice. Start small.";
-  // rotate every 10 days
-  if(day <= 10) return "Mirror Drill: Speak 1-2 min about your day/goals (record if possible).";
-  if(day <= 20) return "Record 2-min audio: talk about a short topic in English-Hindi mix.";
-  if(day <= 30) return "Write: 5 English sentences and translate to Hindi.";
-  if(day <= 40) return "Read aloud: Read 1 paragraph of an article / news.";
-  if(day <= 50) return "Speak 3 mins in English on any simple topic (record & review).";
-  return "Conversation practice: do a 5-min chat with a friend or AI in English.";
+// Save checkbox states
+function saveState(state) {
+  localStorage.setItem("plannerState", JSON.stringify(state));
 }
 
-function getManifestationTask(day){
-  const dailyMorning = "Morning affirmation: 'I am disciplined. I build wealth. I grow daily.' (say aloud 30s)";
-  const dailyEvening = "Evening reflection: Note 1 win, 1 distraction avoided, and tomorrow's top task.";
-  let weekly = "";
-  if(day % 7 === 0) weekly = "Weekly Manifest: Write 3 short future statements (e.g., 'I invest monthly', 'I speak confidently').";
-  if(day === 0) return dailyMorning + " • " + "Intro reflection: write your main reason for joining The Vanguard.";
-  return dailyMorning + " • " + dailyEvening + (weekly ? (" • " + weekly) : "");
+// Update progress bar
+function updateProgress() {
+  const total = document.querySelectorAll("input[type=checkbox]").length;
+  const checked = document.querySelectorAll("input[type=checkbox]:checked").length;
+  const percent = Math.round((checked / total) * 100);
+  progressBar.style.width = percent + "%";
+  progressText.textContent = `${checked} / ${total} tasks completed (${percent}%)`;
 }
 
-/* ============== WORKOUT: weekly split + progressive overload ============== */
-/*
- Weekly split:
- 1 -> Chest + Triceps
- 2 -> Back + Biceps
- 3 -> Shoulders + Abs
- 4 -> Legs
- 5 -> Full Body (HIIT)
- 6 -> Active Recovery (Yoga/Walk/Stretch)
- 7 -> Rest + Reflection
- We'll increase intensity slowly every week with small caps.
-*/
-function getWorkoutForDay(day){
-  if(day === 0) return "Intro: Start with light mobility, no heavy training — prepare equipment and mindset.";
-  const weekIndex = ((day-1) % 7) + 1; // 1..7
-  const weekNumber = Math.ceil(day / 7);
-  // progressive increments per week (small)
-  const incPush = Math.min( Math.floor(5 + weekNumber*2), 60 ); // cap
-  const incSquat = Math.min( Math.floor(8 + weekNumber*4), 140 );
-  const incPlank = Math.min( 30 + weekNumber*12, 180 ); // seconds
-  // Workouts templates
-  const templates = {
-    1: `Chest + Triceps: Push-ups ${Math.min(12 + incPush, 60)} (3 sets), Incline push-ups 3x10, Dips (chair) 3x8, Triceps dips or diamond push-ups 2x8`,
-    2: `Back + Biceps: Inverted rows / assisted pull-ups 3x6-10, Single-arm rows (band) 3x10 each, Bicep curls (band/dumbbell) 3x10`,
-    3: `Shoulders + Abs: Pike push-ups or shoulder taps 3x8-12, Overhead press (band) 3x10, Plank variations total ${Math.min(90 + incPlank, 180)}s (split sets), Leg raises 3x10`,
-    4: `Legs: Squats ${Math.min(15 + incSquat,140)} (3 sets), Lunges 3x10 each, Calf raises 3x20, Glute bridges 3x12`,
-    5: `Full Body (HIIT): 4 rounds - 30s burpees / 30s rest, 30s jump squats, 30s mountain climbers — cool down stretch`,
-    6: `Active Recovery: 20-30 min walk, 15 min mobility & stretching, light yoga (focus on breathing)`,
-    7: `Rest Day: Full rest, light walk if you want, journaling & weekly reflection`
-  };
-  return templates[weekIndex];
-}
+const state = loadState();
 
-/* ============== SKILL TASK ============== */
-function getSkillTask(day){
-  if(day === 0) return "Intro: Plan your learning goals. Which skill do you want to build first? (Python recommended)";
-  // map day to skillRoadmap where available, else fallback to repeating roadmap end
-  if(skillRoadmap[day]) return skillRoadmap[day];
-  // fallback: cycle through last block
-  const keys = Object.keys(skillRoadmap).map(n=>parseInt(n)).sort((a,b)=>a-b);
-  const last = keys[keys.length-1];
-  const idx = ((day - 1) % last) + 1;
-  return skillRoadmap[idx] || skillRoadmap[last];
-}
-
-/* ============== UI & Plan generation ============== */
-const planOutput = document.getElementById('planOutput');
-const progressBar = document.getElementById('progressBar');
-const progressText = document.getElementById('progressText');
-const quickNoteInput = document.getElementById('quickNote');
-
-function renderDay(day){
-  // tasks list
-  if(day === 0){
-    const introHtml = `
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><h2 style="margin:0;color:var(--accent)">📢 Vanguard — Introduction (Day 0)</h2>
-        <p class="muted" style="margin:6px 0 0">Welcome to the Vanguard. This space is for serious growth — wealth, health, language, and skill. Rules: Respect, Discipline, Consistency. Start small. Commit daily.</p></div>
-        <div class="muted">Program length: 60 days</div>
-      </div>
-      <div style="margin-top:12px">
-        <ul class="plan-list">
-          <li><strong>Morning:</strong> Mirror affirmation (30s) & set today's top priority.</li>
-          <li><strong>Fitness:</strong> Light mobility & planning for week — no heavy load.</li>
-          <li><strong>Finance:</strong> Learn the recording rule: write 1 expense daily.</li>
-          <li><strong>Speaking:</strong> Prepare to start mirror drills on Day 1.</li>
-          <li><strong>Manifest:</strong> Write your main reason & 3 goals for 60 days.</li>
-        </ul>
-      </div>`;
-    planOutput.innerHTML = introHtml;
-    updateProgress(0);
-    return;
-  }
-
-  const fitness = getWorkoutForDay(day);
-  const finance = getFinanceTask(day);
-  const speaking = getSpeakingTask(day);
-  const manifest = getManifestationTask(day);
-  const skill = getSkillTask(day);
-  const challenge = miniChallenges[(day-1) % miniChallenges.length];
-  const note = surpriseNotes[(day-1) % surpriseNotes.length];
-  const quick = quickNoteInput.value ? `<li><strong>Quick Note:</strong> ${escapeHtml(quickNoteInput.value)}</li>` : "";
-
-  // checkbox progress keys: day-task0..task6 (7 tasks)
-  const tasks = [
-    {k:`day${day}-task0`, label:`Morning Affirmation & Top 1`},
-    {k:`day${day}-task1`, label:`Fitness: ${shortText(fitness,80)}`},
-    {k:`day${day}-task2`, label:`Skill: ${shortText(skill,80)}`},
-    {k:`day${day}-task3`, label:`Speaking: ${shortText(speaking,80)}`},
-    {k:`day${day}-task4`, label:`Finance: ${shortText(finance,80)}`},
-    {k:`day${day}-task5`, label:`Mini Challenge: ${shortText(challenge,80)}`},
-    {k:`day${day}-task6`, label:`Evening Reflection: ${shortText(manifest,80)}`}
-  ];
-
-  let checkboxHtml = "";
-  tasks.forEach((t, i) => {
-    const checked = localStorage.getItem(t.k) === "checked" ? "checked" : "";
-    checkboxHtml += `<div class="task"><input type="checkbox" id="${t.k}" ${checked} onchange="toggleTask(this,'${t.k}')"><label for="${t.k}" style="font-size:14px">${t.label}</label></div>`;
-  });
-
-  const html = `
-    <div class="plan-title"><h2 style="margin:0">📅 Day ${day}</h2><div class="muted">Week ${Math.ceil(day/7)} • ${day<=currentDayNumber ? 'Unlocked' : 'Locked'}</div></div>
-    <div style="margin-top:8px" class="muted">Fitness focus • Skill focus • Speaking • Finance • Mindset</div>
-    <div style="margin-top:12px">${checkboxHtml}</div>
-    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:12px 0">
-    <ul class="plan-list">
-      <li><strong>Fitness:</strong> ${fitness}</li>
-      <li><strong>Skill Development:</strong> ${skill}</li>
-      <li><strong>Speaking Drill:</strong> ${speaking}</li>
-      <li><strong>Finance:</strong> ${finance}</li>
-      <li><strong>Manifestation & Reflection:</strong> ${manifest}</li>
-      <li><strong>Mini Challenge:</strong> ${challenge}</li>
-      <li><strong>Surprise Note:</strong> ${note}</li>
-      ${quick}
+// Intro Day 0
+const intro = document.createElement("details");
+intro.open = true;
+intro.innerHTML = `
+  <summary>Day 0 — Introduction</summary>
+  <div class="day-card">
+    <h3>Day 0 — Intro</h3>
+    <ul>
+      <li><input type="checkbox" data-id="0-1"> Set your mindset for success</li>
+      <li><input type="checkbox" data-id="0-2"> Prepare your environment</li>
+      <li><input type="checkbox" data-id="0-3"> Review the 60-day plan</li>
     </ul>
-  `;
-  planOutput.innerHTML = html;
-  updateProgress(day);
-}
+  </div>`;
+container.appendChild(intro);
 
-/* ============ Utility & Progress ============ */
-function shortText(s, n){ return (s.length > n) ? s.slice(0,n-1)+'…' : s; }
-function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Weeks
+let dayCounter = 1;
+for (let w = 1; w <= Math.ceil(maxDays / daysPerWeek); w++) {
+  const week = document.createElement("details");
+  week.innerHTML = `<summary>Week ${w}</summary>`;
 
-function toggleTask(el, key){
-  if(el.checked) localStorage.setItem(key, "checked");
-  else localStorage.removeItem(key);
-  // update progress bar for current selected day
-  const selectedDay = parseInt(select.value,10);
-  updateProgress(selectedDay);
-}
-
-function updateProgress(day){
-  // count checked tasks for that day
-  if(day === 0){
-    progressText.textContent = "0/0";
-    progressBar.style.width = "0%";
-    return;
+  for (let d = 1; d <= daysPerWeek && dayCounter <= maxDays; d++) {
+    const dayCard = document.createElement("div");
+    dayCard.className = "day-card";
+    dayCard.innerHTML = `
+      <h3>Day ${dayCounter}</h3>
+      <ul>
+        <li><input type="checkbox" data-id="${dayCounter}-1"> Task 1 for Day ${dayCounter}</li>
+        <li><input type="checkbox" data-id="${dayCounter}-2"> Task 2 for Day ${dayCounter}</li>
+        <li><input type="checkbox" data-id="${dayCounter}-3"> Task 3 for Day ${dayCounter}</li>
+      </ul>`;
+    week.appendChild(dayCard);
+    dayCounter++;
   }
-  const total = 7;
-  let completed = 0;
-  for(let i=0;i<total;i++){
-    if(localStorage.getItem(`day${day}-task${i}`) === "checked") completed++;
-  }
-  const pct = Math.round((completed/total)*100);
-  progressText.textContent = `${completed}/${total}`;
-  progressBar.style.width = pct + "%";
+  container.appendChild(week);
 }
 
-/* ============ Copy Plan ============ */
-function copyPlanText(){
-  const selectedDay = parseInt(select.value,10);
-  if(selectedDay === 0){
-    const intro = planOutput.textContent.trim();
-    navigator.clipboard.writeText(intro).then(()=> alert("Intro copied to clipboard ✅"));
-    return;
-  }
-  // gather visible items
-  let lines = [`Day ${selectedDay} — The Vanguard`];
-  // read the DOM plan content
-  lines.push(...Array.from(planOutput.querySelectorAll('.plan-list li')).map(li => li.textContent.trim()));
-  navigator.clipboard.writeText(lines.join('\n')).then(()=> alert("Plan copied to clipboard ✅"));
-}
-
-/* ============ Init: render selected day ============ */
-document.getElementById('getPlanBtn').addEventListener('click', ()=> {
-  const day = parseInt(select.value,10);
-  renderDay(day);
+// Restore checkbox states
+document.querySelectorAll("input[type=checkbox]").forEach(cb => {
+  if (state[cb.dataset.id]) cb.checked = true;
+  cb.addEventListener("change", () => {
+    state[cb.dataset.id] = cb.checked;
+    saveState(state);
+    updateProgress();
+  });
 });
 
-document.getElementById('copyBtn').addEventListener('click', copyPlanText);
-
-/* On load, render selected day (default = today or max unlocked) */
-(function init(){
-  // default selection is today's dayNumber (if <= maxDays) else maxDays
-  const defaultDay = currentDayNumber <= maxDays ? currentDayNumber : maxDays;
-  select.value = defaultDay;
-  renderDay(parseInt(select.value,10));
-})();
-
-/* Optional: update dropdown unlocking each day when visitors open site later */
-(function unlockFutureDays(){
-  // enable options up to today's day
-  for(const opt of select.options){
-    const val = parseInt(opt.value,10);
-    if(!isNaN(val) && val > currentDayNumber) opt.disabled = true;
-    else opt.disabled = false; // intro and unlocked days
-  }
-})();
-
-/* Expose toggleTask to window so inline onchange can call it */
-window.toggleTask = toggleTask;
-
+updateProgress();
 </script>
+
 </body>
 </html>
